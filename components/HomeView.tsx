@@ -231,7 +231,7 @@ const HomeView: React.FC = () => {
             )}
           </div>
         </section> */}
-        <div className="flex items-center justify-between mt-2 mb-2 cursor-pointer" onClick={() => navigate('/lesson/grammar')}>
+        <div className="flex items-center justify-between mt-2 mb-2 cursor-pointer" onClick={() => navigate('/lesson/grammar', { state: { grammar: grammarPoints[0] } })}>
           <h2 className="text-lg font-bold text-slate-800">今日语法</h2>
           <span className="text-xs text-slate-400">每日5句</span>
         </div>
@@ -240,13 +240,17 @@ const HomeView: React.FC = () => {
       {/* Scrollable Bottom Section */}
       <main className="flex-1 overflow-y-auto px-6 pb-24 pt-2">
         {/* Daily Grammar Widget */}
-        <section onClick={() => navigate('/lesson/grammar')} className="cursor-pointer">
+        <section className="">
 
 
           <div className="flex flex-col gap-3">
             {grammarPoints.length > 0 ? (
               grammarPoints.map((grammar, idx) => (
-                <div key={grammar.id} className="bg-gradient-to-br from-[#e0eafc] to-[#cfdef3] rounded-2xl p-4 relative overflow-hidden shadow-sm">
+                <div
+                  key={grammar.id}
+                  onClick={() => navigate('/lesson/grammar', { state: { grammar } })}
+                  className="bg-gradient-to-br from-[#e0eafc] to-[#cfdef3] rounded-2xl p-4 relative overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                >
                   {idx === 0 && <School size={80} className="absolute -right-2 -top-2 text-white opacity-20" />}
 
                   <div className="relative z-10">
