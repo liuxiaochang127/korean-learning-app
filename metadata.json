@@ -1,0 +1,7 @@
+{
+  "name": "Yonsei Korean Learning",
+  "description": "A comprehensive Korean language learning application featuring audio lessons, grammar breakdowns, vocabulary flashcards, and reading comprehension.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
