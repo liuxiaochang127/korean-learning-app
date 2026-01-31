@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, RotateCcw, CheckCircle2, AlertCircle, TrendingUp, HelpCircle } from 'lucide-react';
+import { ChevronLeft, RotateCcw, CheckCircle2, AlertCircle, TrendingUp, HelpCircle, Volume2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api, StudyItem } from '../services/api';
 import { supabase } from '../lib/supabaseClient';
+import { speakKorean } from '../lib/tts';
 
 const DailyStudyView: React.FC = () => {
     const navigate = useNavigate();
@@ -45,36 +45,23 @@ const DailyStudyView: React.FC = () => {
         const currentWord = studySet[currentIndex];
 
         // 1. Submit to API (Record status)
-        // Even if we fail, we record it. The logic in api.ts sets interval to 1 or 2 days.
         await api.submitReview(userId, currentWord.id, rating, currentWord.progress);
 
         let newSet = [...studySet];
 
         if (rating < 2) {
             // 2. Re-queue logic (Session Internal)
-            // 0(Forgot) -> 3rd spot from now (skip 2)
-            // 1(Hard) -> 10th spot from now (skip 9)
             const gap = rating === 0 ? 3 : 10;
-
-            // Calculate insertion index
-            // If we are at 0. Next is 1. We want it at 0 + gap.
-            // e.g. Gap 3. Insert at 3. Queue: [1, 2, New, ...]
             let insertIndex = currentIndex + gap;
 
-            // Boundary check: just append if near end
             if (insertIndex > newSet.length) {
                 insertIndex = newSet.length;
             }
 
-            // Insert copy
-            // Note: We use the same ID, React key might need handling if we mapped list, 
-            // but here we render one by one.
             newSet.splice(insertIndex, 0, { ...currentWord });
             setStudySet(newSet);
         } else {
-            // Only update "Today's Progress" count if successfully passed
             setReviewedCountToday(prev => prev + 1);
-            // Trigger global event to update BottomNav badge immediately
             window.dispatchEvent(new Event('study-progress-updated'));
         }
 
@@ -115,7 +102,7 @@ const DailyStudyView: React.FC = () => {
                     <button
                         onClick={() => {
                             setSessionComplete(false);
-                            loadSession(); // Try to load more or review again
+                            loadSession();
                         }}
                         className="flex-1 py-3.5 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/30 hover:bg-primary-dark transition-colors"
                     >
@@ -145,17 +132,8 @@ const DailyStudyView: React.FC = () => {
     }
 
     const currentWord = studySet[currentIndex];
-    // Progress now reflects total completed today (original reviewed count + current session progress)
-    // Be careful: if we re-queue words (rating<2), array length grows. 
-    // We should visually stick to 100 limit context if possible, or just show "Today's Words".
-    // Simple way: (reviewedCountToday + 1) / 100
-    // But reviewedCountToday increments when we finish a word (rating >= 2).
-    // What about the current index? 
-    // Let's use: (Reviewed Initial + Session Completed) / 100.
-    // Session Completed = Index of *unique* words passed? Hard to track with re-queue.
-    // Fallback: Just show "Today's Limit: 100 | Done: X"
     const totalTarget = 100;
-    const currentProgressNum = Math.min(totalTarget, reviewedCountToday + 1); // +1 for current
+    const currentProgressNum = Math.min(totalTarget, reviewedCountToday + 1);
     const progressPercent = (currentProgressNum / totalTarget) * 100;
 
     return (
@@ -189,9 +167,20 @@ const DailyStudyView: React.FC = () => {
                         {currentWord.isNew ? '新词' : '复习'}
                     </span>
 
-                    <h1 className="text-4xl font-bold font-korean text-slate-800 mb-2 tracking-tight">
-                        {currentWord.korean}
-                    </h1>
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                        <h1 className="text-4xl font-bold font-korean text-slate-800 tracking-tight">
+                            {currentWord.korean}
+                        </h1>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                speakKorean(currentWord.korean);
+                            }}
+                            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors active:scale-95"
+                        >
+                            <Volume2 size={24} />
+                        </button>
+                    </div>
 
                     {/* Placeholder for Pronunciation or Audio */}
                     <p className="text-slate-400 font-medium text-lg mb-6">{showAnswer ? (currentWord.romaja || '...') : '...'}</p>
@@ -207,8 +196,17 @@ const DailyStudyView: React.FC = () => {
                         </div>
 
                         {currentWord.example_sentence && (
-                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 max-w-xs mx-auto text-left">
-                                <p className="font-korean text-slate-800 mb-1 leading-relaxed">
+                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 max-w-xs mx-auto text-left relative group">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakKorean(currentWord.example_sentence || '');
+                                    }}
+                                    className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 rounded-full transition-colors"
+                                >
+                                    <Volume2 size={16} />
+                                </button>
+                                <p className="font-korean text-slate-800 mb-1 leading-relaxed pr-8">
                                     {currentWord.example_sentence}
                                 </p>
                                 <p className="text-slate-500 text-xs">{currentWord.example_meaning}</p>

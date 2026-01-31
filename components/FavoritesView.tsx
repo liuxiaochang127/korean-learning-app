@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Trash2, Heart, Book, GraduationCap } from 'lucide-react';
+import { ChevronLeft, Trash2, Heart, Book, GraduationCap, Volume2 } from 'lucide-react';
 
 import { api, DictionaryEntry } from '../services/api';
 import { supabase } from '../lib/supabaseClient';
+import { speakKorean } from '../lib/tts';
 
 const FavoritesView: React.FC = () => {
   const navigate = useNavigate();
@@ -19,14 +20,17 @@ const FavoritesView: React.FC = () => {
           const data = await api.getFavorites(user.id);
           // Map dictionary entries to view format
           const mapped = data.map(entry => ({
-            type: entry.pos === 'Noun' || entry.pos === 'Verb' || entry.pos === 'Adjective' || entry.pos === '名词' || entry.pos === '动词' || entry.pos === '形容词' ? 'word' : 'grammar', // Simplified logic
+            type: entry.pos === 'Noun' || entry.pos === 'Verb' || entry.pos === 'Adjective' || entry.pos === '名词' || entry.pos === '动词' || entry.pos === '形容词' ? 'word' : 'grammar',
             korean: entry.korean,
             english: entry.definition,
             meaning: entry.definition,
-            time: 'Just now', // Timestamp not in API yet for logic
+            time: 'Just now',
             date: '今天',
             color: 'blue',
-            id: entry.id
+            id: entry.id,
+            // Mock examples if missing from API
+            exampleK: '예문이 없습니다.',
+            exampleC: '暂无例句'
           }));
           setFavorites(mapped);
         }
@@ -81,9 +85,20 @@ const FavoritesView: React.FC = () => {
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary uppercase tracking-wide">单词</span>
                           <span className="text-xs text-gray-400">{item.time}</span>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-1 font-korean tracking-tight">
-                          {item.korean} <span className="text-base font-normal text-gray-400 font-sans">{item.english}</span>
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xl font-bold text-slate-900 font-korean tracking-tight">
+                            {item.korean} <span className="text-base font-normal text-gray-400 font-sans">{item.english}</span>
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakKorean(item.korean);
+                            }}
+                            className="p-1 rounded-full text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
                         <p className="text-sm text-slate-500">{item.meaning}</p>
                       </div>
                       <button className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50">
@@ -99,7 +114,18 @@ const FavoritesView: React.FC = () => {
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-600 uppercase tracking-wide">语法</span>
                           <span className="text-xs text-gray-400">{item.time}</span>
                         </div>
-                        <h3 className="text-lg font-bold text-primary mb-1 font-korean">{item.korean}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-bold text-primary font-korean">{item.korean}</h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakKorean(item.korean);
+                            }}
+                            className="p-1 rounded-full text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
                         <p className="text-sm text-slate-800 leading-relaxed mb-2">{item.meaning}</p>
                         <div className="bg-gray-50 p-2 rounded-lg">
                           <p className="text-xs text-slate-600 font-korean">{item.exampleK}</p>
@@ -142,8 +168,8 @@ const FavoritesView: React.FC = () => {
             </div>
           </section>
         ))}
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

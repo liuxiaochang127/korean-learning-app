@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Bookmark, Volume2, School, Loader } from 'lucide-react';
 import { GrammarPoint, api } from '../services/api';
+import { speakKorean } from '../lib/tts';
 
 const GrammarView: React.FC = () => {
   const navigate = useNavigate();
@@ -100,7 +101,10 @@ const GrammarView: React.FC = () => {
         <div className="flex flex-col gap-4 mt-2">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-base font-bold text-slate-900">示范例句</h3>
-            <span className="text-xs text-slate-500 flex items-center gap-1 cursor-pointer hover:text-primary">
+            <span
+              className="text-xs text-slate-500 flex items-center gap-1 cursor-pointer hover:text-primary"
+              onClick={() => speakKorean(grammar.example_korean)}
+            >
               点击收听 <Volume2 size={14} />
             </span>
           </div>
@@ -109,7 +113,10 @@ const GrammarView: React.FC = () => {
 
             {/* Example 1 (From Data) */}
             <div className="p-4 flex items-start gap-4">
-              <button className="mt-1 flex items-center justify-center size-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 shrink-0 transition-colors">
+              <button
+                className="mt-1 flex items-center justify-center size-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 shrink-0 transition-colors"
+                onClick={() => speakKorean(grammar.example_korean)}
+              >
                 <Volume2 size={18} />
               </button>
               <div className="flex flex-col gap-1">

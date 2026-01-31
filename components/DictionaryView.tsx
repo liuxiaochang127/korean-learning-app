@@ -4,6 +4,7 @@ import { Search, X, Volume2, ChevronRight, Book, Star } from 'lucide-react';
 
 import { api, DictionaryEntry } from '../services/api';
 import { supabase } from '../lib/supabaseClient';
+import { speakKorean } from '../lib/tts';
 
 const DictionaryView: React.FC = () => {
    const [searchTerm, setSearchTerm] = useState('');
@@ -140,7 +141,18 @@ const DictionaryView: React.FC = () => {
                      <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-primary/30 transition-all cursor-pointer group hover:scale-[1.01] hover:shadow-md duration-300 animate-slide-up">
                         <div className="flex justify-between items-start mb-2">
                            <div className="flex flex-col">
-                              <h3 className="text-2xl font-bold text-slate-900 font-korean tracking-tight">{item.korean}</h3>
+                              <div className="flex items-center gap-2">
+                                 <h3 className="text-2xl font-bold text-slate-900 font-korean tracking-tight">{item.korean}</h3>
+                                 <button
+                                    onClick={(e) => {
+                                       e.stopPropagation();
+                                       speakKorean(item.korean);
+                                    }}
+                                    className="p-1.5 rounded-full text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                                 >
+                                    <Volume2 size={18} />
+                                 </button>
+                              </div>
                               <span className="text-xs text-gray-400 font-medium mt-0.5">{item.romaja}</span>
                            </div>
                            <button
@@ -160,7 +172,16 @@ const DictionaryView: React.FC = () => {
                            <span className="text-slate-800 font-bold text-sm">{item.definition}</span>
                         </div>
                         {item.example_sentence && (
-                           <div className="bg-gray-50 rounded-xl p-3 text-sm text-slate-600 group-hover:bg-primary/5 transition-colors">
+                           <div className="bg-gray-50 rounded-xl p-3 text-sm text-slate-600 group-hover:bg-primary/5 transition-colors relative">
+                              <button
+                                 onClick={(e) => {
+                                    e.stopPropagation();
+                                    speakKorean(item.example_sentence!);
+                                 }}
+                                 className="absolute top-2 right-2 p-1 text-slate-400 hover:text-primary hover:bg-blue-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                              >
+                                 <Volume2 size={14} />
+                              </button>
                               <p className="font-korean mb-1 text-slate-800"><span className="text-primary font-bold">{item.korean}</span> 포함된 예문:</p>
                               <p className="text-slate-500 italic text-xs">"{item.example_sentence}" ({item.example_meaning})</p>
                            </div>

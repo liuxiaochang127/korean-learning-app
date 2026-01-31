@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 import { api, Course, GrammarPoint } from '../services/api';
 import { supabase } from '../lib/supabaseClient';
+import { speakKorean } from '../lib/tts';
 
 const HomeView: React.FC = () => {
   const navigate = useNavigate();
@@ -256,7 +257,13 @@ const HomeView: React.FC = () => {
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-1">
                       <span className="bg-white/60 backdrop-blur-sm text-primary text-[10px] font-bold px-2 py-0.5 rounded opacity-80">{grammar.level || '基础'}</span>
-                      <button className="size-6 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                      <button
+                        className="size-6 rounded-full bg-white flex items-center justify-center shadow-sm text-primary hover:bg-gray-50 active:scale-95 transition-transform"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          speakKorean(grammar.example_korean);
+                        }}
+                      >
                         <Volume2 size={12} />
                       </button>
                     </div>

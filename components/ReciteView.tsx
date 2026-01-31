@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabaseClient';
-import { Eye, EyeOff, Check, ChevronLeft, BookOpen, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Check, ChevronLeft, BookOpen, AlertCircle, Volume2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { speakKorean } from '../lib/tts';
 
 type MaskMode = 'none' | 'hide-korean' | 'hide-chinese';
 
@@ -155,12 +156,25 @@ export const ReciteView: React.FC = () => {
           <div key={word.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between group">
             {/* Left: Korean */}
             <div
-              className="flex-1 min-w-0 pr-4 relative cursor-pointer"
+              className="flex-1 min-w-0 pr-4 relative cursor-pointer group/korean"
               onClick={() => toggleReveal(word.id, 'korean')}
             >
-              <div className={`transition-opacity duration-300 ${!isRevealed(word.id, 'korean') ? 'opacity-0' : 'opacity-100'}`}>
-                <h3 className="text-lg font-bold text-slate-800 font-korean">{word.korean}</h3>
-                {word.romaja && <p className="text-xs text-slate-400 font-mono">{word.romaja}</p>}
+              <div className={`transition-opacity duration-300 flex items-center justify-between ${!isRevealed(word.id, 'korean') ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 font-korean">{word.korean}</h3>
+                  {word.romaja && <p className="text-xs text-slate-400 font-mono">{word.romaja}</p>}
+                </div>
+                {isRevealed(word.id, 'korean') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      speakKorean(word.korean);
+                    }}
+                    className="p-1.5 text-slate-300 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                  >
+                    <Volume2 size={16} />
+                  </button>
+                )}
               </div>
               {!isRevealed(word.id, 'korean') && (
                 <div className="absolute inset-0 flex items-center text-slate-300 select-none">
