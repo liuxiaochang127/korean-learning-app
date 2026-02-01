@@ -20,13 +20,13 @@ export const ReciteView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Reset revealed items when mask mode changes
+    // 当遮挡模式改变时重置已显示项目
     setRevealedItems(new Set());
   }, [maskMode]);
 
   const toggleReveal = (id: string, type: 'korean' | 'chinese') => {
     if (maskMode === 'none') return;
-    // We only reveal if it matches the hidden type
+    // 仅当其匹配隐藏类型时才显示
     if ((type === 'korean' && maskMode === 'hide-korean') ||
       (type === 'chinese' && maskMode === 'hide-chinese')) {
       const key = `${id}-${type}`;
@@ -74,7 +74,7 @@ export const ReciteView: React.FC = () => {
     }
   };
 
-  // Sentinel for infinite scroll
+  // 无限滚动的哨兵元素
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,11 +92,11 @@ export const ReciteView: React.FC = () => {
     return () => observer.disconnect();
   }, [hasMore, loading, userId, page]);
 
-  // Remove handleScroll function
+  // 移除 handleScroll 函数
 
   const incrementCount = async (wordId: string, index: number) => {
     if (!userId) return;
-    // Optimistic update
+    // 乐观更新
     const newWords = [...words];
     newWords[index].review_count = (newWords[index].review_count || 0) + 1;
     setWords(newWords);
@@ -110,7 +110,7 @@ export const ReciteView: React.FC = () => {
 
   return (
     <div className="absolute inset-0 flex flex-col bg-background-light z-40">
-      {/* Header */}
+      {/* 头部 */}
       <div className="bg-white px-4 py-4 shadow-sm z-10 shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export const ReciteView: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls */}
+        {/* 控制区 */}
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
           <button
             onClick={() => setMaskMode('none')}
@@ -150,11 +150,11 @@ export const ReciteView: React.FC = () => {
         </div>
       </div>
 
-      {/* List - Scrollable */}
+      {/* 列表 - 可滚动 */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24">
         {words.map((word, idx) => (
           <div key={word.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between group">
-            {/* Left: Korean */}
+            {/* 左侧：韩语 */}
             <div
               className="flex-1 min-w-0 pr-4 relative cursor-pointer group/korean"
               onClick={() => toggleReveal(word.id, 'korean')}
@@ -184,10 +184,10 @@ export const ReciteView: React.FC = () => {
               )}
             </div>
 
-            {/* Divider */}
+            {/* 分隔线 */}
             <div className="w-px h-10 bg-gray-100 mx-2"></div>
 
-            {/* Right: Chinese (Definition) */}
+            {/* 右侧：中文（定义） */}
             <div
               className="flex-1 min-w-0 pl-4 relative text-right cursor-pointer"
               onClick={() => toggleReveal(word.id, 'chinese')}
@@ -204,7 +204,7 @@ export const ReciteView: React.FC = () => {
               )}
             </div>
 
-            {/* Counter / Action */}
+            {/* 计数器 / 操作 */}
             <div className="ml-4 pl-4 border-l border-gray-100 flex flex-col items-center gap-1 shrink-0">
               <button
                 onClick={() => incrementCount(word.id, idx)}
@@ -219,7 +219,7 @@ export const ReciteView: React.FC = () => {
           </div>
         ))}
 
-        {/* Sentinel for Infinite Scroll */}
+        {/* 无限滚动哨兵 */}
         <div ref={sentinelRef} className="h-4 w-full"></div>
 
         {loading && (

@@ -57,7 +57,7 @@ const AuthView: React.FC = () => {
         } catch (err: any) {
             console.error(err);
             let msg = err.message || '操作失败，请重试';
-            // Translate common Supabase errors
+            // 翻译常见的 Supabase 错误
             if (msg.includes('Invalid login credentials')) msg = '账号或密码错误';
             else if (msg.includes('Email not confirmed')) msg = '请先去验证邮箱';
             else if (msg.includes('User already registered')) msg = '该邮箱已被注册';
@@ -93,7 +93,7 @@ const AuthView: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background-light to-blue-50 flex flex-col">
-            {/* Header */}
+            {/* 头部 */}
             <header className="pt-12 pb-8 px-6 text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4">
                     <BookOpen size={40} className="text-primary" />
@@ -102,10 +102,10 @@ const AuthView: React.FC = () => {
                 <p className="text-sm text-gray-500 mt-1">开始你的韩语学习之旅</p>
             </header>
 
-            {/* Auth Card */}
+            {/* 认证卡片 */}
             <main className="flex-1 px-6 pb-8">
                 <div className="bg-white rounded-3xl shadow-xl p-6 max-w-md mx-auto">
-                    {/* Tabs */}
+                    {/* 选项卡 */}
                     <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
                         <button
                             onClick={() => setIsLogin(true)}
@@ -123,9 +123,9 @@ const AuthView: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Form */}
+                    {/* 表单 */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username (Register only) */}
+                        {/* 用户名（仅注册） */}
                         {!isLogin && (
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -143,7 +143,7 @@ const AuthView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Email */}
+                        {/* 邮箱 */}
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Mail size={20} className="text-gray-400" />
@@ -159,7 +159,7 @@ const AuthView: React.FC = () => {
                             />
                         </div>
 
-                        {/* Password */}
+                        {/* 密码 */}
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Lock size={20} className="text-gray-400" />
@@ -183,7 +183,7 @@ const AuthView: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Forgot Password Link */}
+                        {/* 忘记密码链接 */}
                         {isLogin && (
                             <div className="flex justify-end">
                                 <button
@@ -197,14 +197,14 @@ const AuthView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Error Message */}
+                        {/* 错误消息 */}
                         {error && (
                             <div className={`text-sm p-3 rounded-lg ${error.includes('成功') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                                 {error}
                             </div>
                         )}
 
-                        {/* Submit Button */}
+                        {/* 提交按钮 */}
                         <button
                             type="submit"
                             disabled={loading}
@@ -221,14 +221,14 @@ const AuthView: React.FC = () => {
                         </button>
                     </form>
 
-                    {/* Divider */}
+                    {/* 分隔线 */}
                     <div className="flex items-center gap-4 my-6">
                         <div className="flex-1 h-px bg-gray-200"></div>
                         <span className="text-xs text-gray-400">或</span>
                         <div className="flex-1 h-px bg-gray-200"></div>
                     </div>
 
-                    {/* Guest Mode */}
+                    {/* 游客模式 */}
                     <button
                         onClick={() => navigate('/')}
                         className="w-full h-12 rounded-xl border-2 border-gray-200 text-gray-500 font-medium text-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
@@ -237,7 +237,7 @@ const AuthView: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Footer Info */}
+                {/* 底部信息 */}
                 <p className="text-center text-xs text-gray-400 mt-6">
                     继续即表示您同意我们的服务条款和隐私政策
                 </p>

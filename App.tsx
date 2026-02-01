@@ -18,7 +18,7 @@ import BottomNav from './components/BottomNav';
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  // Show bottom nav only on main dashboard pages
+  // 仅在主要仪表板页面显示底部导航
   const showBottomNav = ['/', '/dictionary', '/practice', '/profile', '/recite', '/upload'].includes(location.pathname);
   const isAuthPage = location.pathname === '/auth';
 

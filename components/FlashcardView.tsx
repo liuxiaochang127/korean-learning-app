@@ -16,7 +16,7 @@ const FlashcardView: React.FC = () => {
   React.useEffect(() => {
     const loadCards = async () => {
       try {
-        // For now, fetch generic/demo cards since we don't have route params for chapter yet
+        // 目前，由于还没有章节的路由参数，先获取通用/演示卡片
         const data = await api.getFlashcards();
         setCards(data);
       } catch (e) {
@@ -36,7 +36,7 @@ const FlashcardView: React.FC = () => {
       if (currentIndex < cards.length - 1) {
         setCurrentIndex(prev => prev + 1);
       } else {
-        // End of deck
+        // 卡片组结束
         alert("恭喜！本组卡片学习完成！");
         navigate(-1);
       }
@@ -45,17 +45,17 @@ const FlashcardView: React.FC = () => {
 
 
   const playAudio = (e: React.MouseEvent, text: string) => {
-    e.stopPropagation(); // Prevent card flip
+    e.stopPropagation(); // 阻止卡片翻转
 
     if (isPlaying) return;
 
     if ('speechSynthesis' in window) {
-      // Cancel any ongoing speech
+      // 取消任何正在进行的语音
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ko-KR'; // Korean
-      utterance.rate = 0.8; // Slightly slower for clarity
+      utterance.lang = 'ko-KR'; // 韩语
+      utterance.rate = 0.8; // 稍慢一点以便清晰
 
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
@@ -63,7 +63,7 @@ const FlashcardView: React.FC = () => {
 
       window.speechSynthesis.speak(utterance);
     } else {
-      // Fallback visual feedback if API not supported
+      // 如果 API 不支持，则使用可视反馈回退
       console.warn("Speech Synthesis not supported");
       setIsPlaying(true);
       setTimeout(() => setIsPlaying(false), 500);
@@ -72,7 +72,7 @@ const FlashcardView: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light">
-      {/* Header */}
+      {/* 头部 */}
       <header className="flex items-center justify-between p-4 pb-2 z-10">
         <button onClick={() => navigate(-1)} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100">
           <ChevronLeft size={24} />
@@ -86,7 +86,7 @@ const FlashcardView: React.FC = () => {
         </button>
       </header>
 
-      {/* Progress Ring */}
+      {/* 进度环 */}
       <div className="flex flex-col items-center justify-center py-4 w-full">
         <div className="relative flex items-center justify-center w-16 h-16">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
@@ -100,14 +100,14 @@ const FlashcardView: React.FC = () => {
         <p className="mt-1 text-xs font-medium text-gray-500">{currentIndex + 1} / {cards.length || '-'} 已学</p>
       </div>
 
-      {/* Card Container */}
+      {/* 卡片容器 */}
       <main className="flex-1 px-5 py-2 flex flex-col justify-center perspective-1000">
         {!loading && currentCard ? (
           <div
             className={`relative w-full h-[450px] transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
             onClick={() => setIsFlipped(!isFlipped)}
           >
-            {/* Front Face */}
+            {/* 正面 */}
             <div className="absolute inset-0 w-full h-full bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col backface-hidden">
               <div className="flex justify-between items-start p-6">
                 <div className="px-3 py-1 bg-primary/10 rounded-full">
@@ -124,7 +124,7 @@ const FlashcardView: React.FC = () => {
 
               <div className="flex-1 flex flex-col items-center justify-center pb-20 gap-4">
                 <h1 className="font-korean text-5xl font-bold text-slate-900 tracking-tight">{currentCard.front_text}</h1>
-                {/* Romaja could be optional or generated, for now hiding if not in DB */}
+                {/* 罗马音可选或生成，目前如果数据库没有则隐藏 */}
                 {/* <p className="text-sm text-gray-500 font-medium">Jak-sim-sam-il</p> */}
               </div>
               <div className="absolute bottom-6 w-full text-center">
@@ -132,7 +132,7 @@ const FlashcardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Back Face */}
+            {/* 背面 */}
             <div className="absolute inset-0 w-full h-full bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col backface-hidden rotate-y-180">
               <div className="flex-1 flex flex-col items-center text-center px-6 pt-10 pb-8 gap-6">
                 <div className="flex flex-col items-center">
@@ -173,7 +173,7 @@ const FlashcardView: React.FC = () => {
         )}
       </main>
 
-      {/* Footer Controls */}
+      {/* 底部控制栏 */}
       <footer className="p-5 pb-8">
         <div className="flex gap-4">
           <button onClick={handleNext} className="flex-1 h-14 rounded-2xl border-2 border-gray-200 bg-transparent text-gray-500 font-bold text-base hover:bg-gray-50 hover:border-gray-300 transition-all active:scale-[0.98]">

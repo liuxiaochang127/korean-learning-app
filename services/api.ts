@@ -9,7 +9,7 @@ export interface DictionaryEntry {
     definition: string;
     example_sentence?: string;
     example_meaning?: string;
-    is_starred?: boolean; // Joined from user_favorites
+    is_starred?: boolean; // 关联自 user_favorites
 }
 
 export interface Flashcard {
@@ -28,7 +28,7 @@ export interface Course {
     level_category?: string;
     cover_url?: string;
     total_chapters: number;
-    progress?: number; // Joined from user_courses
+    progress?: number; // 关联自 user_courses
     status?: string;
 }
 
@@ -58,7 +58,64 @@ export interface StudyItem extends DictionaryEntry {
 }
 
 export const api = {
-    // Dictionary
+    // 词典相关
+    async addDictionaryEntry(entry: Omit<DictionaryEntry, 'id'>): Promise<DictionaryEntry | null> {
+        // 如果可能，尝试附加当前用户ID，以确保RLS策略允许将来的编辑
+        const { data: { user } } = await supabase.auth.getUser();
+        const payload = user ? { ...entry, user_id: user.id } : entry;
+
+        const { data, error } = await supabase
+            .from('dictionary_entries')
+            .insert(payload)
+            .select();
+
+        if (error) {
+            console.error('Error adding dictionary entry:', error);
+            throw error;
+        }
+        return data?.[0] || null;
+    },
+
+    async updateDictionaryEntry(id: string, updates: Partial<DictionaryEntry>): Promise<DictionaryEntry | null> {
+        const { data, error } = await supabase
+            .from('dictionary_entries')
+            .update(updates)
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Error updating dictionary entry:', error);
+            throw error;
+        }
+
+        // 优化：检测静默的RLS失败
+        if (!data || data.length === 0) {
+            throw new Error('更新失败：可能是权限不足（只能修改自己创建的单词）或记录不存在。');
+        }
+
+        return data[0];
+    },
+
+    async deleteDictionaryEntry(id: string): Promise<boolean> {
+        const { data, error } = await supabase
+            .from('dictionary_entries')
+            .delete()
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Error deleting dictionary entry:', error);
+            throw error;
+        }
+
+        // 优化：检测静默的RLS失败
+        if (!data || data.length === 0) {
+            throw new Error('删除失败：可能是权限不足（只能删除自己创建的单词）或记录不存在。');
+        }
+
+        return true;
+    },
+
     async searchDictionary(term: string): Promise<DictionaryEntry[]> {
         if (!term) return [];
 
@@ -77,7 +134,7 @@ export const api = {
 
         let results = data || [];
 
-        // Check favorites status if user is logged in
+        // 如果用户已登录，检查收藏状态
         if (user && results.length > 0) {
             const ids = results.map(r => r.id);
             const { data: favorites } = await supabase
@@ -131,22 +188,17 @@ export const api = {
     },
 
     async getCategories(): Promise<string[]> {
-        // Fetch distinct POS from dictionary_entries
-        // Note: supabase .select('pos') with distinct is needed.
-        // But supabase-js simple client doesn't support .distinct() directly easily in one go without raw sql or a function usually,
-        // but we can try .select('pos') and process client side for now as dataset is small, OR use a stored procedure.
-        // Given constraints and small dataset, let's fetch all (or limit) and uniques client side, or just hardcode common ones plus dynamic?
-        // Let's try RPC if available, otherwise just fetch a sample.
-
-        // Better: Use a dedicated SQL function or just fetch distinct POS
-        // RPC approach is cleaner but requires SQL setup. Let's do raw CSV approach on client for now or hardcoded 'Common' ones + fetched.
+        // 从 dictionary_entries 获取不同的词性
+        // 注意：Supabase JS 客户端不直接支持 .distinct()。
+        // 考虑到数据集较小，我们在客户端处理或者使用 RPC。
+        // 目前采用客户端过滤。
 
         const { data, error } = await supabase
             .from('dictionary_entries')
             .select('pos')
             .order('pos');
 
-        if (error) return ['All', 'Noun', 'Verb', 'Adjective']; // Fallback
+        if (error) return ['All', 'Noun', 'Verb', 'Adjective']; // 降级方案
 
         const unique = Array.from(new Set(data?.map(item => item.pos).filter(Boolean)));
         return ['All', ...unique];
@@ -166,25 +218,25 @@ export const api = {
             return [];
         }
 
-        // Flatten the result
+        // 扁平化结果
         return data?.map((item: any) => item.dictionary_entries) || [];
     },
 
     async toggleFavorite(userId: string, entryId: string, isFavorite: boolean) {
         if (isFavorite) {
-            // Remove
+            // 移除收藏
             await supabase.from('user_favorites').delete().match({ user_id: userId, entry_id: entryId });
         } else {
-            // Add
+            // 添加收藏
             await supabase.from('user_favorites').insert({ user_id: userId, entry_id: entryId });
         }
     },
 
-    // Courses
+    // 课程相关
     async getCourses(userId: string): Promise<Course[]> {
-        // Fetch all courses and join with user progress
-        // This is a bit complex with standard Supabase join if we want all courses + progress
-        // Simpler approach: Fetch courses, then fetch progress, merge them locally
+        // 获取所有课程并关联用户进度
+        // 如果想要一次性获取课程和进度，标准的 Supabase join 比较复杂
+        // 更简单的做法：分别获取课程和进度，然后在本地合并
         const { data: courses, error: courseError } = await supabase
             .from('courses')
             .select('*')
@@ -212,7 +264,7 @@ export const api = {
         });
     },
 
-    // Profile
+    // 用户概况
     async getProfile(userId: string) {
         const { data, error } = await supabase
             .from('profiles')
@@ -225,19 +277,19 @@ export const api = {
     },
 
     async getDictionaryStats(userId: string) {
-        // Stats: Total words learned (status != 'new'), reviews due today
+        // 统计：已学习单词总数（状态不为 'new'），今日需复习数
         const nowISO = new Date().toISOString();
 
-        // 1. Learned Count
-        // Simplified: status is not 'new' or 'review_count' > 0
+        // 1. 已学数量
+        // 简化：状态不是 'new'
         const { count: learnedCount } = await supabase
             .from('user_word_progress')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
             .neq('status', 'new');
 
-        // 2. Due Today
-        // Check if daily plan exists first
+        // 2. 今日需复习
+        // 优先检查每日计划是否存在
         const studyDate = this.getLogicalDate();
         const { count: planCount, data: planData } = await supabase
             .from('daily_study_tasks')
@@ -248,10 +300,9 @@ export const api = {
 
         let dueCount = 0;
 
-        // If daily plan exists (planData is not null/empty check implies we query effectively), use it.
-        // Actually count is enough. Wait, if plan doesn't exist, count is 0. 
-        // We need to know if the plan *exists* (generated) or is just completed (0 pending).
-        // Let's check total tasks for today
+        // 如果每日计划存在（且有未完成的任务），使用它
+        // 我们需要知道计划是“已生成”还是只是“已完成”（0个待办）。
+        // 检查今日总任务数
         const { count: totalPlanCount } = await supabase
             .from('daily_study_tasks')
             .select('*', { count: 'exact', head: true })
@@ -261,17 +312,15 @@ export const api = {
         if (totalPlanCount && totalPlanCount > 0) {
             dueCount = planCount || 0;
         } else {
-            // Fallback to dynamic calculation if not generated yet
+            // 如果尚未生成，动态退回计算
             const { count: dynamicDue } = await supabase
                 .from('user_word_progress')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId)
                 .lte('next_review_at', nowISO);
             dueCount = dynamicDue || 0;
-            // Note: This dynamic due count doesn't include the 'new words' meant for today unless generated.
-            // But it's a good enough approximation for "Reviews Due".
-            // If we want to show Total Goal (100), we might just show 100 - learnedToday? 
-            // But let's stick to "Due Reviews" context.
+            // 注意：动态计算不包含今日计划的新词。
+            // 但这对于“待复习”来说已经足够近似。
         }
 
         return {
@@ -280,9 +329,9 @@ export const api = {
         };
     },
 
-    // Flashcards
+    // 抽认卡
     async getFlashcards(chapterId?: string): Promise<Flashcard[]> {
-        // If no chapterId, fetch random or demo set
+        // 如果没有章节ID，获取随机或演示集合
         let query = supabase.from('flashcards').select('*');
 
         if (chapterId) {
@@ -355,8 +404,8 @@ export const api = {
         return newCount;
     },
 
-    // SRS System
-    // Helper to get logical date (changes at 4AM)
+    // SRS 系统 (间隔重复)
+    // 获取逻辑日期（凌晨4点变更）
     async getDailyGrammar(count: number = 5): Promise<GrammarPoint[]> {
         const { data: allIds } = await supabase
             .from('grammar_points')
@@ -388,7 +437,7 @@ export const api = {
     async getDailyStudySet(userId: string, limit: number = 100, fetchDetails: boolean = true): Promise<{ items: StudyItem[], reviewedToday: number }> {
         const studyDate = this.getLogicalDate();
 
-        // 1. Check if tasks exist for today
+        // 1. 检查今日任务是否存在
         const { data: existingTasks, error: checkError } = await supabase
             .from('daily_study_tasks')
             .select('*')
@@ -402,11 +451,11 @@ export const api = {
 
         let tasks = existingTasks || [];
 
-        // 2. If no tasks, generate them (Lazy Generation)
+        // 2. 如果无任务，生成任务（懒生成）
         if (tasks.length === 0) {
             console.log('Generating daily tasks for:', studyDate);
 
-            // A. Get Due Reviews (Due now)
+            // A. 获取到期复习 (Due now)
             const nowISO = new Date().toISOString();
 
             const { data: dueProgress } = await supabase
@@ -424,12 +473,12 @@ export const api = {
                 task_type: 'review'
             }));
 
-            // B. Fill with New Words
+            // B. 填充新词
             const remaining = limit - reviewsToInsert.length;
             let newToInsert: any[] = [];
 
             if (remaining > 0) {
-                // Exclude all learned or already scheduled words
+                // 排除所有已学习或已计划的单词
                 const { data: allUserProgress } = await supabase
                     .from('user_word_progress')
                     .select('word_id')
@@ -439,13 +488,13 @@ export const api = {
 
                 let query = supabase.from('dictionary_entries').select('id').limit(remaining);
                 if (allProgressIds.length > 0) {
-                    const safeIds = allProgressIds.slice(0, 800); // Safety cap
+                    const safeIds = allProgressIds.slice(0, 800); // 数量上限保护
                     query = query.not('id', 'in', `(${safeIds.join(',')})`);
                 }
 
                 const { data: newWords } = await query;
 
-                // Double check client side exclusion
+                // 客户端二次检查排除
                 const reallyNewWords = (newWords || []).filter(w => !allProgressIds.includes(w.id));
 
                 newToInsert = reallyNewWords.map(w => ({
@@ -466,7 +515,7 @@ export const api = {
 
                 if (insertError) console.error('Error inserting tasks:', insertError);
 
-                // Re-fetch to get IDs and be sure
+                // 重新获取以获得 ID 并确认
                 const { data: inserted } = await supabase
                     .from('daily_study_tasks')
                     .select('*')
@@ -478,23 +527,23 @@ export const api = {
 
         const reviewedTodayCount = tasks.filter(t => t.status === 'completed').length;
 
-        // Optimization: If caller doesn't need details (just wants to ensure generation), return early
+        // 优化：如果调用者不需要详情（只想确保生成），提前返回
         if (!fetchDetails) {
             return { items: [], reviewedToday: reviewedTodayCount };
         }
 
-        // 3. Hydrate tasks with Dictionary and Progress data
+        // 3. 填充任务的字典数据和进度数据
         if (tasks.length === 0) return { items: [], reviewedToday: 0 };
 
         const wordIds = tasks.map(t => t.word_id);
 
-        // Fetch Words
+        // 获取单词
         const { data: words } = await supabase
             .from('dictionary_entries')
             .select('*')
             .in('id', wordIds);
 
-        // Fetch Progress (Current state)
+        // 获取进度（当前状态）
         const { data: progress } = await supabase
             .from('user_word_progress')
             .select('*')
@@ -521,12 +570,12 @@ export const api = {
     },
 
     async submitReview(userId: string, wordId: string, quality: 0 | 1 | 2 | 3, currentProgress?: UserWordProgress) {
-        // Algorithm: Simplified Sm-2 with Minute-level adjustments
-        // quality: 0=Unknown(Again), 1=Hard, 2=Good, 3=Easy/Master
+        // 算法：简化的 Sm-2 算法，微调至分钟级
+        // quality: 0=忘记(重来), 1=困难, 2=良好, 3=简单/掌握
 
-        // Defaults for new word
+        // 新词默认值
         let ease = currentProgress?.ease_factor || 2.5;
-        let interval = currentProgress?.interval || 0; // Days
+        let interval = currentProgress?.interval || 0; // 天数
         let reviewCount = (currentProgress?.review_count || 0) + 1;
         let status = currentProgress?.status || 'new';
 
@@ -534,26 +583,26 @@ export const api = {
         let nextReview = new Date(now);
 
         if (quality === 0) {
-            // Forgotten -> 1 Day
+            // 忘记 -> 1 天
             interval = 1;
             status = 'learning';
             ease = Math.max(1.3, ease - 0.2);
             nextReview.setDate(now.getDate() + 1);
         } else if (quality === 1) {
-            // Hard -> 2 Days
+            // 困难 -> 2 天
             interval = 2;
             status = 'learning';
             ease = Math.max(1.3, ease - 0.15);
             nextReview.setDate(now.getDate() + 2);
         } else if (quality === 2) {
-            // Good -> 5 Days base
+            // 良好 -> 基数 5 天
             if (interval < 5) interval = 5;
             else interval = Math.floor(interval * ease);
 
             status = 'review';
             nextReview.setDate(now.getDate() + interval);
         } else if (quality === 3) {
-            // Easy -> 7 Days base
+            // 简单 -> 基数 7 天
             if (interval < 7) interval = 7;
             else interval = Math.floor(interval * ease * 1.3);
 
@@ -573,14 +622,14 @@ export const api = {
             status: status
         };
 
-        // 1. Update Long-term Memory (Progress)
+        // 1. 更新长期记忆（进度表）
         const { error: progressError } = await supabase
             .from('user_word_progress')
             .upsert(payload, { onConflict: 'user_id,word_id' });
 
         if (progressError) console.error('Error submitting review:', progressError);
 
-        // 2. Update Daily Task Status
+        // 2. 更新每日任务状态
         if (quality >= 2) {
             const studyDate = this.getLogicalDate();
             const { error: taskError } = await supabase

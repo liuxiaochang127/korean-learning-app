@@ -18,7 +18,7 @@ const FavoritesView: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const data = await api.getFavorites(user.id);
-          // Map dictionary entries to view format
+          // 将字典条目映射为视图格式
           const mapped = data.map(entry => ({
             type: entry.pos === 'Noun' || entry.pos === 'Verb' || entry.pos === 'Adjective' || entry.pos === '名词' || entry.pos === '动词' || entry.pos === '形容词' ? 'word' : 'grammar',
             korean: entry.korean,
@@ -28,7 +28,7 @@ const FavoritesView: React.FC = () => {
             date: '今天',
             color: 'blue',
             id: entry.id,
-            // Mock examples if missing from API
+            // 如果 API 缺少示例，则使用模拟数据
             exampleK: '예문이 없습니다.',
             exampleC: '暂无例句'
           }));
@@ -45,7 +45,7 @@ const FavoritesView: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light text-slate-900">
-      {/* Header */}
+      {/* 头部 */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <button onClick={() => navigate('/')} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
           <ChevronLeft size={24} />
@@ -54,7 +54,7 @@ const FavoritesView: React.FC = () => {
         <div className="w-10"></div>
       </header>
 
-      {/* Tabs */}
+      {/* 选项卡 */}
       <div className="px-4 py-4 z-40">
         <div className="flex p-1 bg-gray-200 rounded-xl">
           {['all', 'word', 'grammar', 'lesson'].map(tab => (

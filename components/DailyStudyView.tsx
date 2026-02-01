@@ -44,13 +44,13 @@ const DailyStudyView: React.FC = () => {
 
         const currentWord = studySet[currentIndex];
 
-        // 1. Submit to API (Record status)
+        // 1. 提交到 API（记录状态）
         await api.submitReview(userId, currentWord.id, rating, currentWord.progress);
 
         let newSet = [...studySet];
 
         if (rating < 2) {
-            // 2. Re-queue logic (Session Internal)
+            // 2. 重新排队逻辑（会话内部）
             const gap = rating === 0 ? 3 : 10;
             let insertIndex = currentIndex + gap;
 
@@ -138,7 +138,7 @@ const DailyStudyView: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-background-light overflow-hidden pb-20">
-            {/* Header */}
+            {/* 头部 */}
             <div className="shrink-0 px-4 pt-4 pb-2 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
                 <div className="flex justify-between items-center mb-3">
                     <button onClick={() => navigate('/')} className="p-2 text-slate-500 -ml-2 hover:bg-gray-100 rounded-full">
@@ -151,7 +151,7 @@ const DailyStudyView: React.FC = () => {
                         <HelpCircle size={20} />
                     </button>
                 </div>
-                {/* Progress Bar */}
+                {/* 进度条 */}
                 <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-primary transition-all duration-300 ease-out"
@@ -160,7 +160,7 @@ const DailyStudyView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Card Content */}
+            {/* 卡片内容 */}
             <main className="flex-1 flex flex-col justify-center px-6 relative overflow-hidden">
                 <div key={currentWord.id} className="w-full flex-1 flex flex-col items-center justify-center text-center z-10 animate-in fade-in duration-300">
                     <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-4">
@@ -182,7 +182,7 @@ const DailyStudyView: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Placeholder for Pronunciation or Audio */}
+                    {/* 发音或音频占位符 */}
                     <p className="text-slate-400 font-medium text-lg mb-6">{showAnswer ? (currentWord.romaja || '...') : '...'}</p>
 
                     <div className={`transition-all duration-500 ease-out transform ${showAnswer ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
@@ -216,7 +216,7 @@ const DailyStudyView: React.FC = () => {
                 </div>
             </main>
 
-            {/* Action Bar */}
+            {/* 操作栏 */}
             <div className="shrink-0 p-3 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
                 {!showAnswer ? (
                     <button

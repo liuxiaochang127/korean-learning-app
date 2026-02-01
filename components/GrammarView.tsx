@@ -12,14 +12,14 @@ const GrammarView: React.FC = () => {
 
   useEffect(() => {
     const loadGrammar = async () => {
-      // 1. Try to get from navigation state
+      // 1. 尝试从导航状态获取
       if (location.state?.grammar) {
         setGrammar(location.state.grammar);
         setLoading(false);
         return;
       }
 
-      // 2. If no state, fetch a daily grammar (fallback)
+      // 2. 如果没有状态，获取每日语法（回退）
       try {
         const daily = await api.getDailyGrammar(1);
         if (daily && daily.length > 0) {
@@ -54,7 +54,7 @@ const GrammarView: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light text-slate-900">
-      {/* Header */}
+      {/* 头部 */}
       <div className="sticky top-0 z-50 flex items-center bg-white/95 backdrop-blur-sm p-4 border-b border-gray-100 justify-between">
         <button onClick={() => navigate(-1)} className="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
           <ChevronLeft size={24} />
@@ -66,7 +66,7 @@ const GrammarView: React.FC = () => {
       </div>
 
       <main className="flex-1 max-w-md mx-auto p-6 flex flex-col gap-6 pb-32">
-        {/* Title Section */}
+        {/* 标题部分 */}
         <div className="flex flex-col items-center gap-4 pt-4">
           <div className="flex h-7 items-center justify-center gap-x-2 rounded-full bg-primary/10 px-4">
             <School size={14} className="text-primary" />
@@ -84,7 +84,7 @@ const GrammarView: React.FC = () => {
           </p>
         </div>
 
-        {/* Content Card */}
+        {/* 内容卡片 */}
         <div className="flex flex-col rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mt-2">
           <div className="bg-primary/5 px-4 py-3 border-b border-primary/10 flex items-center gap-2">
             <School size={18} className="text-primary" />
@@ -97,7 +97,7 @@ const GrammarView: React.FC = () => {
           </div>
         </div>
 
-        {/* Examples */}
+        {/* 示例 */}
         <div className="flex flex-col gap-4 mt-2">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-base font-bold text-slate-900">示范例句</h3>
@@ -111,7 +111,7 @@ const GrammarView: React.FC = () => {
 
           <div className="flex flex-col gap-0 rounded-xl bg-white shadow-sm border border-gray-100 overflow-hidden">
 
-            {/* Example 1 (From Data) */}
+            {/* 示例 1（来自数据） */}
             <div className="p-4 flex items-start gap-4">
               <button
                 className="mt-1 flex items-center justify-center size-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 shrink-0 transition-colors"
@@ -129,7 +129,7 @@ const GrammarView: React.FC = () => {
               </div>
             </div>
 
-            {/* Placeholder for more examples if available in future */}
+            {/* 更多示例占位符（如果将来可用） */}
           </div>
         </div>
       </main>

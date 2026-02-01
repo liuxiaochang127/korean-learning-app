@@ -22,7 +22,7 @@ const BottomNav: React.FC = () => {
 
     fetchStats();
 
-    // Listen for custom update event
+    // 监听自定义更新事件
     const handleUpdate = () => fetchStats();
     window.addEventListener('study-progress-updated', handleUpdate);
 
@@ -65,7 +65,7 @@ const BottomNav: React.FC = () => {
           );
         })}
       </div>
-      {/* Safe area spacer for iOS */}
+      {/* iOS 安全区域间隔 */}
       <div className="h-4 w-full bg-white"></div>
     </nav>
   );

@@ -21,7 +21,7 @@ const ResourceUploadView: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
 
-  // Audio State with Progress
+  // 带进度的音频状态
   // Removed here, moved lower (see toggleAudio section update) to keep grouped with logic.
   // Ideally we should keep them here but the previous edit tool replaced the block starting at toggleAudio 
   // and included the state definitions there. So we remove them from here to avoid duplicate identifiers.
@@ -31,12 +31,12 @@ const ResourceUploadView: React.FC = () => {
   // Wait, the previous tool call REPLACED lines 223-255 with new state variables + new toggleAudio.
   // So lines 24-27 (the old state variables) are now DUPLICATES. We must remove them.
 
-  // Load uploaded files list
+  // 加载已上传文件列表
   useEffect(() => {
     fetchFiles();
   }, []);
 
-  // Auto-hide error/success messages after 5 seconds
+  // 5秒后自动隐藏错误/成功消息
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -82,31 +82,24 @@ const ResourceUploadView: React.FC = () => {
     setUploadProgress(0);
 
     try {
-      // Use original filename, but handle potential path traversal or weird chars if vital
-      // For Supabase, keeping original name risks overwrites if not careful, but user requested "keep name".
-      // OR just use the name if user really wants exact name. 
-      // User said "keep name", usually implies they want to see "Lesson1.mp3" not "uuid.mp3".
-      // Let's rely on folders or acceptable behavior. If conflict, we might error or overwrite.
-      // Better strategy: "Timestamp_Origname"
-
-      // Strategy: Base64 encode the filename to ensure it is purely ASCII (A-Z, a-z, 0-9, -, _)
-      // This bypasses any S3 "Invalid Key" issues with special/Chinese characters while preserving the original name data.
-      // Format: timestamp__BASE64NAME
+      // 策略：对文件名进行 Base64 编码以确保其纯 ASCII（A-Z, a-z, 0-9, -, _）
+      // 这避免了特殊字符/中文字符的任何 S3 "Invalid Key" 问题，同时保留了原始名称数据。
+      // 格式：timestamp__BASE64NAME
 
       const encoder = (str: string) => {
-        // UTF-8 friendly Base64 encode
+        // UTF-8 友好的 Base64 编码
         return window.btoa(unescape(encodeURIComponent(str)))
           .replace(/\+/g, '-')
           .replace(/\//g, '_')
-          .replace(/=/g, ''); // Remove padding to keep it clean
+          .replace(/=/g, ''); // 移除填充以保持整洁
       };
 
       const base64Name = encoder(file.name);
-      // Use double underscore as separator to easily split later
+      // 使用双下划线作为分隔符，以便稍后轻松分割
       const storageName = `${Date.now()}__${base64Name}`;
       const filePath = `uploads/${storageName}`;
 
-      // Simulate progress
+      // 模拟进度
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
@@ -121,7 +114,7 @@ const ResourceUploadView: React.FC = () => {
       clearInterval(progressInterval);
 
       if (error) {
-        // Translate common Supabase errors
+        // 翻译常见的 Supabase 错误
         if (error.message.includes('row-level security')) {
           throw new Error('权限不足: 请在 Supabase 后台 Storage -> Policies 开启 "Insert" 权限。');
         } else if (error.message.includes('Duplicate')) {
@@ -134,11 +127,11 @@ const ResourceUploadView: React.FC = () => {
       setUploadProgress(100);
       setMessage({ type: 'success', text: '文件上传成功！' });
       setFile(null);
-      fetchFiles(); // Refresh list
+      fetchFiles(); // 刷新列表
 
     } catch (error: any) {
       console.error('Upload error:', error);
-      // Construct a more helpful error message
+      // 构造更有帮助的错误消息
       let errorMsg = error.message || '上传失败';
       if (error.statusCode) {
         errorMsg += ` (代码: ${error.statusCode})`;
@@ -165,13 +158,13 @@ const ResourceUploadView: React.FC = () => {
         throw error;
       }
 
-      // Supabase returns an empty array if no file was deleted (e.g. permission issue or file not found)
+      // 如果未删除任何文件（例如权限问题或文件未找到），Supabase 返回空数组
       if (!data || data.length === 0) {
         throw new Error('删除操作未执行：可能是权限不足（Policy）或文件不存在。');
       }
 
       setMessage({ type: 'success', text: '文件删除成功' });
-      // Refresh list
+      // 刷新列表
       fetchFiles();
     } catch (error: any) {
       console.error('Delete error:', error);
@@ -187,37 +180,37 @@ const ResourceUploadView: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Helper to get public URL
+  // 获取公共 URL 的辅助函数
   const getFileUrl = (fileName: string) => {
     const { data } = supabase.storage.from('resources').getPublicUrl(`uploads/${fileName}`);
     return data.publicUrl;
   };
 
-  // Extract display name (decode Base64 if matches pattern, else fallback)
+  // 提取显示名称（如果匹配模式则解码 Base64，否则回退）
   const getDisplayName = (fileName: string) => {
-    // Check if it matches our pattern: timestamp__BASE64
+    // 检查是否匹配我们的模式：timestamp__BASE64
     if (fileName.includes('__')) {
       const parts = fileName.split('__');
       if (parts.length === 2) {
         try {
           let b64 = parts[1];
-          // Restore Base64 chars
+          // 恢复 Base64 字符
           b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
-          // Pad with =
+          // 用 = 填充
           while (b64.length % 4) b64 += '=';
-          // Decode UTF-8
+          // 解码 UTF-8
           return decodeURIComponent(escape(window.atob(b64)));
         } catch (e) {
-          // If decode fails, return raw
+          // 如果解码失败，返回原始值
           return fileName;
         }
       }
     }
 
-    // Fallback for older files or simple names
-    // 1. Remove timestamp prefix
+    // 旧文件或简单名称的回退
+    // 1. 移除时间戳前缀
     const nameWithoutPrefix = fileName.replace(/^\d+_/, '');
-    // 2. Decode URL entities to restore Chinese
+    // 2. 解码 URL 实体以恢复中文
     try {
       return decodeURIComponent(nameWithoutPrefix);
     } catch (e) {
@@ -225,7 +218,7 @@ const ResourceUploadView: React.FC = () => {
     }
   };
 
-  // Audio State with Progress
+  // 带进度的音频状态
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -244,7 +237,7 @@ const ResourceUploadView: React.FC = () => {
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0; // Reset previous
+        audioRef.current.currentTime = 0; // 重置之前的
       }
       const audio = new Audio(url);
 
@@ -283,11 +276,11 @@ const ResourceUploadView: React.FC = () => {
 
   const handlePreview = (fileName: string) => {
     const url = getFileUrl(fileName);
-    // For images/pdf, open in new tab.
-    // For .docx, use Microsoft Office Online Viewer or Google Docs Viewer fallback
+    // 对于图片/PDF，在新标签页中打开。
+    // 对于 .docx，使用 Microsoft Office Online Viewer 或 Google Docs Viewer 回退
     const lowerName = fileName.toLowerCase();
     if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || lowerName.endsWith('.pptx') || lowerName.endsWith('.xlsx')) {
-      // Use Office Online Viewer
+      // 使用 Office Online Viewer
       const encodedUrl = encodeURIComponent(url);
       window.open(`https://view.officeapps.live.com/op/view.aspx?src=${encodedUrl}`, '_blank');
     } else {
@@ -302,7 +295,7 @@ const ResourceUploadView: React.FC = () => {
         <p className="text-gray-500 text-sm">上传音频或文档资料，丰富您的学习库。</p>
       </header>
 
-      {/* Upload Card */}
+      {/* 上传卡片 */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div
           className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors ${file ? 'border-primary/50 bg-primary/5' : 'border-gray-200 hover:border-primary/30'
@@ -376,7 +369,7 @@ const ResourceUploadView: React.FC = () => {
         </button>
       </div>
 
-      {/* File List */}
+      {/* 文件列表 */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-gray-800 px-1">我的资源列表</h2>
 
@@ -421,7 +414,7 @@ const ResourceUploadView: React.FC = () => {
                     <button onClick={() => handleDelete(f.name)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18} /></button>
                   </div>
 
-                  {/* Audio Progress Bar (Only visible when playing this file) */}
+                  {/* 音频进度条（仅在播放此文件时可见） */}
                   {isPlayingThis && (
                     <div className="px-4 pb-4 -mt-1 animate-slide-up">
                       <div className="flex items-center gap-2 mb-1">
