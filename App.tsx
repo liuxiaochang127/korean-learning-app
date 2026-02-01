@@ -11,13 +11,15 @@ import DictionaryView from './components/DictionaryView';
 import AuthView from './components/AuthView';
 import DailyStudyView from './components/DailyStudyView';
 import ReciteView from './components/ReciteView';
+import ResourceUploadView from './components/ResourceUploadView';
+import ProfileView from './components/ProfileView';
 import BottomNav from './components/BottomNav';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   // Show bottom nav only on main dashboard pages
-  const showBottomNav = ['/', '/dictionary', '/practice', '/profile', '/recite'].includes(location.pathname);
+  const showBottomNav = ['/', '/dictionary', '/practice', '/profile', '/recite', '/upload'].includes(location.pathname);
   const isAuthPage = location.pathname === '/auth';
 
   React.useEffect(() => {
@@ -60,7 +62,8 @@ const Layout = () => {
           <Route path="/dictionary" element={<DictionaryView />} />
           <Route path="/practice" element={<DailyStudyView />} />
           <Route path="/recite" element={<ReciteView />} />
-          <Route path="/profile" element={<FavoritesView />} />
+          <Route path="/profile" element={<ProfileView />} />
+          <Route path="/upload" element={<ResourceUploadView />} />
         </Routes>
       </main>
       {showBottomNav && <BottomNav />}

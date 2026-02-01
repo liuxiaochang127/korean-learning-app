@@ -36,6 +36,7 @@ const BottomNav: React.FC = () => {
     { icon: BookOpen, label: '词典', path: '/dictionary' },
     { icon: ScrollText, label: '背诵', path: '/recite' },
     { icon: Edit3, label: '练习', path: '/practice', badge: dueCount },
+
     { icon: User, label: '个人', path: '/profile' },
   ];
 
