@@ -1,5 +1,5 @@
 // tts.ts - Text to Speech Utility
-// Optimized for Android WebView, WeChat, and iOS
+// Optimized for Android WebView, WeChat, and iOS with Online Fallback
 
 let voicesLoaded = false;
 let cachedVoices: SpeechSynthesisVoice[] = [];
@@ -22,58 +22,74 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   loadVoices(); // Initial try
 }
 
-export const speakKorean = (text: string) => {
-  if (!('speechSynthesis' in window)) {
-    console.error("Browser does not support speech synthesis");
-    alert("您的浏览器不支持语音播放建议使用 Chrome 或 Safari 打开");
-    return;
-  }
-
-  // Always cancel previous utterance
+// Fallback TTS using Online API (Youdao - Reliable in China)
+const playOnlineTTS = (text: string) => {
+  // Cancel any browser synthesis
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'ko-KR';
-  utterance.rate = 0.9; // Slightly faster but clear
-  utterance.pitch = 1.0;
+  const encodedText = encodeURIComponent(text);
+  // Youdao Dict Voice API: le=ko for Korean
+  const url = `https://dict.youdao.com/dictvoice?audio=${encodedText}&le=ko`;
 
-  // Retry fetching voices if empty (Android cold start)
-  if (!voicesLoaded || cachedVoices.length === 0) {
-    cachedVoices = window.speechSynthesis.getVoices();
-  }
-
-  // Voice Selection Strategy
-  // 1. Exact Match for Korean (Google/System)
-  // 2. Fallback to any 'ko' code
-  let koreanVoice = cachedVoices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
-
-  // Android/WeChat specific: explicit check for 'Google' voices which are usually higher quality
-  // "Google Korean" is common on Android
-  const googleVoice = cachedVoices.find(v => v.name.includes('Google') && v.lang.includes('ko'));
-  if (googleVoice) {
-    koreanVoice = googleVoice;
-  }
-
-  if (koreanVoice) {
-    utterance.voice = koreanVoice;
-    console.log("Using voice:", koreanVoice.name);
-  } else {
-    console.warn("No specific Korean voice found, relying on default lang 'ko-KR'");
-  }
-
-  // Android WeChat Workaround:
-  // Sometimes 'speak' fails if not triggered by direct user interaction,
-  // or if volume is handled weirdly. 
-  // We add error logging.
-  utterance.onerror = (e) => {
-    console.error("TTS Error:", e);
-    // Fallback for some Android WebViews that block 'speak' without user gesture context persistence
+  const audio = new Audio(url);
+  audio.onerror = (e) => {
+    console.error("Online TTS Failed:", e);
+    alert("无法播放语音，请检查网络连接");
   };
 
-  try {
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.error("Speech trigger failed:", e);
-    alert("语音播放失败，请检查手机静音开关或权限");
+  // WeChat Audio Hack: sometimes requires interaction handling or WeixinJSBridge
+  const playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(error => {
+      console.error("Audio play failed:", error);
+      // Auto-play policy error often happens here
+    });
   }
+};
+
+export const speakKorean = (text: string) => {
+  if (!text) return;
+
+  // Strategy 1: Browser Speech Synthesis (Preferred if available & Korean voice exists)
+  if ('speechSynthesis' in window) {
+    // Ensure voice list is fresh
+    if (!voicesLoaded || cachedVoices.length === 0) {
+      cachedVoices = window.speechSynthesis.getVoices();
+    }
+
+    // Check if we have a legitimate Korean voice
+    // (Many Androids in China lack Korean TTS engine, returning 0 voices or only English/Chinese)
+    const koreanVoice = cachedVoices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+
+    // On Android WeChat, local TTS is notoriously broken or missing. 
+    // If we don't have a confirmed Korean voice, OR if it's WeChat (often silent), force fallback to online.
+    // We only use local if we explicitely found a Korean voice AND it's not WeChat (to be safe), 
+    // OR if user explicitly wants local (hard to know).
+    // Let's try: If (Korean Voice Exists AND (Not WeChat OR iOS)), use Local. Else Online.
+    // Actually, iOS WeChat works fine with system voices. Android WeChat is the trouble.
+
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (koreanVoice && (isIOS || !isWeChat)) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.voice = koreanVoice;
+      utterance.rate = 0.9;
+
+      utterance.onerror = (e) => {
+        console.warn("Local TTS error, switching to online fallback", e);
+        playOnlineTTS(text);
+      };
+
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+  }
+
+  // Strategy 2: Online Fallback (Youdao)
+  // This is the default for Android WeChat or missing Engines
+  playOnlineTTS(text);
 };
