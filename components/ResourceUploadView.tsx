@@ -225,37 +225,53 @@ const ResourceUploadView: React.FC = () => {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // 当 currentAudio 改变时，自动播放
+  // 注意：需要用户交互触发第一次播放，这里假设 toggleAudio 是由点击触发的
+  useEffect(() => {
+    if (currentAudio && audioRef.current) {
+      // 如果是为了切换歌曲，需要重置并播放
+      // 但如果是暂停后再播放，不应重置
+      // 这里我们在 toggleAudio 中处理播放逻辑，这里主要处理源变更
+    }
+  }, [currentAudio]);
+
   const toggleAudio = (fileName: string) => {
     const url = getFileUrl(fileName);
+    const audio = audioRef.current;
 
-    if (currentAudio === url && isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-    } else if (currentAudio === url && !isPlaying) {
-      audioRef.current?.play();
-      setIsPlaying(true);
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0; // 重置之前的
+    if (!audio) return;
+
+    // 情况1: 点击当前正在播放/暂停的音频
+    if (currentAudio === url) {
+      if (isPlaying) {
+        audio.pause();
+      } else {
+        // iOS 修复: 确保这是一个用户交互的回调中
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Playback failed:", error);
+            setMessage({ type: 'error', text: "无法播放音频，请重试" });
+          });
+        }
       }
-      const audio = new Audio(url);
-
-      audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
-      audio.onloadedmetadata = () => setDuration(audio.duration);
-      audio.onended = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-      };
-      audio.onerror = () => {
-        setMessage({ type: 'error', text: "无法播放音频，可能文件损坏或格式不支持。" });
-        setIsPlaying(false);
-      };
-
-      audioRef.current = audio;
-      audio.play().catch(e => console.error(e));
+    }
+    // 情况2: 点击新的音频
+    else {
+      // 设置新的源
       setCurrentAudio(url);
-      setIsPlaying(true);
+      // 等待 React 更新 DOM 或直接在 useEffect 中播放？
+      // 直接设置 src 属性并播放是可行的，因为 audioRef 是持久的
+      audio.src = url;
+      audio.load();
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Playback failed:", error);
+          // 自动播放策略可能会阻止这里，但通常在点击处理程序中是允许的
+        });
+      }
     }
   };
 
@@ -267,6 +283,30 @@ const ResourceUploadView: React.FC = () => {
     }
   };
 
+  const onAudioTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const onAudioLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const onAudioEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
+  const onAudioPlay = () => setIsPlaying(true);
+  const onAudioPause = () => setIsPlaying(false);
+  const onAudioError = () => {
+    setIsPlaying(false);
+    setMessage({ type: 'error', text: "音频加载失败" });
+  };
+
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
@@ -276,11 +316,8 @@ const ResourceUploadView: React.FC = () => {
 
   const handlePreview = (fileName: string) => {
     const url = getFileUrl(fileName);
-    // 对于图片/PDF，在新标签页中打开。
-    // 对于 .docx，使用 Microsoft Office Online Viewer 或 Google Docs Viewer 回退
     const lowerName = fileName.toLowerCase();
     if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || lowerName.endsWith('.pptx') || lowerName.endsWith('.xlsx')) {
-      // 使用 Office Online Viewer
       const encodedUrl = encodeURIComponent(url);
       window.open(`https://view.officeapps.live.com/op/view.aspx?src=${encodedUrl}`, '_blank');
     } else {
@@ -383,17 +420,18 @@ const ResourceUploadView: React.FC = () => {
           <div className="grid gap-3">
             {fileList.map((f) => {
               const isAudio = f.metadata?.mimetype?.startsWith('audio') || f.name.endsWith('.mp3') || f.name.endsWith('.wav');
-              const isPlayingThis = isPlaying && currentAudio === getFileUrl(f.name);
+              const isCurrent = currentAudio === getFileUrl(f.name);
+              const isPlayingThis = isCurrent && isPlaying;
               const displayName = getDisplayName(f.name);
 
               return (
-                <div key={f.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow ${isPlayingThis ? 'ring-1 ring-primary/30' : ''}`}>
+                <div key={f.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow ${isCurrent ? 'ring-1 ring-primary/30' : ''}`}>
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 overflow-hidden flex-1 mr-2">
                       <button
                         onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}
                         className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-colors ${isAudio
-                          ? (isPlayingThis ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/20')
+                          ? (isPlayingThis ? 'bg-primary text-white' : (isCurrent ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary hover:bg-primary/20'))
                           : 'bg-blue-50 text-blue-500 hover:bg-blue-100'
                           }`}
                       >
@@ -401,7 +439,7 @@ const ResourceUploadView: React.FC = () => {
                       </button>
 
                       <div className="min-w-0 flex-1 cursor-pointer" onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}>
-                        <p className={`text-sm font-medium truncate ${isPlayingThis ? 'text-primary' : 'text-gray-800'}`}>
+                        <p className={`text-sm font-medium truncate ${isCurrent ? 'text-primary' : 'text-gray-800'}`}>
                           {displayName}
                         </p>
                         <p className="text-xs text-gray-400 flex items-center gap-2">
@@ -414,8 +452,8 @@ const ResourceUploadView: React.FC = () => {
                     <button onClick={() => handleDelete(f.name)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18} /></button>
                   </div>
 
-                  {/* 音频进度条（仅在播放此文件时可见） */}
-                  {isPlayingThis && (
+                  {/* 音频进度条（改为：如果是当前选中的音频，默认显示，即便暂停也显示） */}
+                  {isCurrent && (
                     <div className="px-4 pb-4 -mt-1 animate-slide-up">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] text-gray-400 font-mono w-8 text-right">{formatTime(currentTime)}</span>
@@ -437,6 +475,18 @@ const ResourceUploadView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 隐藏的 Audio 元素，用于处理播放 */}
+      <audio
+        ref={audioRef}
+        onPlay={onAudioPlay}
+        onPause={onAudioPause}
+        onEnded={onAudioEnded}
+        onTimeUpdate={onAudioTimeUpdate}
+        onLoadedMetadata={onAudioLoadedMetadata}
+        onError={onAudioError}
+        playsInline // 对 iOS 友好
+      />
     </div>
   );
 };
