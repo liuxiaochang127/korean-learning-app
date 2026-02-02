@@ -50,7 +50,7 @@ const Layout = () => {
 
   return (
     <div className="relative min-h-screen w-full max-w-md mx-auto bg-background-light shadow-2xl overflow-hidden flex flex-col">
-      <main className={`flex-1 overflow-y-auto no-scrollbar ${showBottomNav ? 'pb-24' : ''}`}>
+      <main className="absolute inset-0 flex flex-col bg-background-light z-40">
         <Routes>
           <Route path="/" element={<HomeView />} />
           <Route path="/auth" element={<AuthView />} />

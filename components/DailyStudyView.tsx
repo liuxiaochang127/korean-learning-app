@@ -137,9 +137,9 @@ const DailyStudyView: React.FC = () => {
     const progressPercent = (currentProgressNum / totalTarget) * 100;
 
     return (
-        <div className="flex flex-col h-screen bg-background-light overflow-hidden pb-20">
+        <div className="flex flex-col h-full bg-background-light overflow-hidden pb-20">
             {/* 头部 */}
-            <div className="shrink-0 px-4 pt-4 pb-2 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+            <div className="bg-white px-4 pt-4 pb-2 shadow-sm z-10 shrink-0 sticky top-0">
                 <div className="flex justify-between items-center mb-3">
                     <button onClick={() => navigate('/')} className="p-2 text-slate-500 -ml-2 hover:bg-gray-100 rounded-full">
                         <ChevronLeft />

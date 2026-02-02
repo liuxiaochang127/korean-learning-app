@@ -106,9 +106,9 @@ const HomeView: React.FC = () => {
   );
 
   return (
-    <div className="h-screen bg-background-light flex flex-col overflow-hidden">
+    <div className="absolute inset-0 flex flex-col bg-background-light z-40">
       {/* 头部 */}
-      <header className="bg-white px-6 pt-12 pb-6 rounded-b-[2rem] shadow-sm z-10 relative">
+      <header className="bg-white px-6 pt-12 pb-6 rounded-b-[2rem] shadow-sm z-10 sticky top-0 shrink-0">
         <div className="flex items-center justify-between mb-6">
           {loadingProfile ? (
             <ProfileSkeleton />
@@ -188,7 +188,7 @@ const HomeView: React.FC = () => {
       </div>
 
       {/* 底部可滚动区域 */}
-      <main className="flex-1 overflow-y-auto px-6 pb-24 pt-2">
+      <main className="flex-1 overflow-y-auto px-6 pb-24 pt-2 no-scrollbar">
         {/* 每日语法小组件 */}
         <section className="">
 

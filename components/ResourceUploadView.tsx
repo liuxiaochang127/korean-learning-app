@@ -326,157 +326,167 @@ const ResourceUploadView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 pb-24 space-y-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">资源上传中心</h1>
-        <p className="text-gray-500 text-sm">上传音频或文档资料，丰富您的学习库。</p>
-      </header>
+    <div className="h-full flex flex-col bg-background-light overflow-hidden">
+      {/* 固定区域：头部 + 上传卡片 */}
+      <div className="shrink-0 z-10 bg-background-light">
+        <header className="px-6 pt-6 pb-2">
+          <h1 className="text-2xl font-bold text-gray-800">资源上传中心</h1>
+          <p className="text-gray-500 text-sm">上传音频或文档资料，丰富您的学习库。</p>
+        </header>
 
-      {/* 上传卡片 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div
-          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors ${file ? 'border-primary/50 bg-primary/5' : 'border-gray-200 hover:border-primary/30'
-            }`}
-        >
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="hidden"
-            id="file-upload"
-            accept="audio/*,application/pdf,text/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          />
+        {/* 上传卡片 - 固定不滚动 */}
+        <div className="px-6 pb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div
+              className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors ${file ? 'border-primary/50 bg-primary/5' : 'border-gray-200 hover:border-primary/30'
+                }`}
+            >
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                accept="audio/*,application/pdf,text/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              />
 
-          <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center w-full">
-            {file ? (
-              <>
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  {file.type.startsWith('audio') ? <FileAudio className="text-primary" /> : <FileText className="text-primary" />}
-                </div>
-                <p className="text-sm font-medium text-gray-700 text-center break-all">{file.name}</p>
-                <p className="text-xs text-gray-400 mt-1">{formatSize(file.size)}</p>
-                <button
-                  onClick={(e) => { e.preventDefault(); setFile(null); }}
-                  className="mt-4 text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
-                >
-                  <X size={14} /> 移除文件
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                  <Upload className="text-gray-400" />
-                </div>
-                <p className="text-sm font-medium text-gray-600">点击选择上传文件</p>
-                <p className="text-xs text-gray-400 mt-1">支持格式：音频 (MP3, WAV) 或 文档 (PDF, Word)</p>
-              </>
-            )}
-          </label>
-        </div>
-
-        {uploading && (
-          <div className="mt-4">
-            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
+              <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center w-full">
+                {file ? (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      {file.type.startsWith('audio') ? <FileAudio className="text-primary" size={20} /> : <FileText className="text-primary" size={20} />}
+                    </div>
+                    <p className="text-xs font-medium text-gray-700 text-center break-all">{file.name}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{formatSize(file.size)}</p>
+                    <button
+                      onClick={(e) => { e.preventDefault(); setFile(null); }}
+                      className="mt-2 text-[10px] text-red-500 hover:text-red-600 flex items-center gap-1"
+                    >
+                      <X size={12} /> 移除
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center mb-2">
+                      <Upload className="text-gray-400" size={20} />
+                    </div>
+                    <p className="text-xs font-medium text-gray-600">点击选择文件</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">支持音频/文档</p>
+                  </>
+                )}
+              </label>
             </div>
-            <p className="text-xs text-center text-gray-500 mt-2">正在上传... {uploadProgress}%</p>
-          </div>
-        )}
 
-        {message && (
-          <div className={`mt-4 p-3 rounded-lg text-sm flex items-center gap-2 animate-slide-up ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-            }`}>
-            {message.type === 'success' ? <Check size={16} /> : <X size={16} />}
-            {message.text}
-          </div>
-        )}
-
-        <button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className={`flex items-center justify-center gap-2 w-full mt-6 py-3 rounded-xl font-medium transition-all ${!file || uploading
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/30'
-            }`}
-        >
-          {uploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
-          {uploading ? '上传中...' : '开始上传'}
-        </button>
-      </div>
-
-      {/* 文件列表 */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-gray-800 px-1">我的资源列表</h2>
-
-        {loadingFiles ? (
-          <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
-        ) : fileList.length === 0 ? (
-          <div className="text-center p-8 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-            暂无上传文件。
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {fileList.map((f) => {
-              const isAudio = f.metadata?.mimetype?.startsWith('audio') || f.name.endsWith('.mp3') || f.name.endsWith('.wav');
-              const isCurrent = currentAudio === getFileUrl(f.name);
-              const isPlayingThis = isCurrent && isPlaying;
-              const displayName = getDisplayName(f.name);
-
-              return (
-                <div key={f.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow ${isCurrent ? 'ring-1 ring-primary/30' : ''}`}>
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3 overflow-hidden flex-1 mr-2">
-                      <button
-                        onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}
-                        className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-colors ${isAudio
-                          ? (isPlayingThis ? 'bg-primary text-white' : (isCurrent ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary hover:bg-primary/20'))
-                          : 'bg-blue-50 text-blue-500 hover:bg-blue-100'
-                          }`}
-                      >
-                        {isAudio ? (isPlayingThis ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />) : <FileText size={20} />}
-                      </button>
-
-                      <div className="min-w-0 flex-1 cursor-pointer" onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}>
-                        <p className={`text-sm font-medium truncate ${isCurrent ? 'text-primary' : 'text-gray-800'}`}>
-                          {displayName}
-                        </p>
-                        <p className="text-xs text-gray-400 flex items-center gap-2">
-                          {new Date(f.created_at).toLocaleDateString()} • {formatSize(f.metadata?.size)}
-                          {!isAudio && <span className="text-blue-400 flex items-center gap-0.5"><Eye size={10} /> 预览</span>}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button onClick={() => handleDelete(f.name)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18} /></button>
-                  </div>
-
-                  {/* 音频进度条（改为：如果是当前选中的音频，默认显示，即便暂停也显示） */}
-                  {isCurrent && (
-                    <div className="px-4 pb-4 -mt-1 animate-slide-up">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] text-gray-400 font-mono w-8 text-right">{formatTime(currentTime)}</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max={duration || 100}
-                          value={currentTime}
-                          onChange={handleSeek}
-                          className="flex-1 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-sm"
-                        />
-                        <span className="text-[10px] text-gray-400 font-mono w-8">{formatTime(duration)}</span>
-                      </div>
-                    </div>
-                  )}
+            {uploading && (
+              <div className="mt-3">
+                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
                 </div>
-              )
-            })}
+                <p className="text-[10px] text-center text-gray-500 mt-1">上传中... {uploadProgress}%</p>
+              </div>
+            )}
+
+            {message && (
+              <div className={`mt-3 p-2 rounded-lg text-xs flex items-center gap-2 animate-slide-up ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}>
+                {message.type === 'success' ? <Check size={14} /> : <X size={14} />}
+                {message.text}
+              </div>
+            )}
+
+            <button
+              onClick={handleUpload}
+              disabled={!file || uploading}
+              className={`flex items-center justify-center gap-2 w-full mt-4 py-2.5 rounded-xl font-medium text-sm transition-all ${!file || uploading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/30'
+                }`}
+            >
+              {uploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+              {uploading ? '上传中...' : '开始上传'}
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* 隐藏的 Audio 元素，用于处理播放 */}
+      {/* 固定标题：我的资源列表 */}
+      <div className="px-6 pb-2 pt-2 bg-background-light shrink-0 z-10">
+        <h2 className="text-lg font-bold text-gray-800 px-1">我的资源列表</h2>
+      </div>
+
+      {/* 滚动区域：文件列表 */}
+      <div className="flex-1 overflow-y-auto px-6 pb-24 no-scrollbar border-t border-gray-100/50">
+        <div className="space-y-4 pt-4">
+
+          {loadingFiles ? (
+            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
+          ) : fileList.length === 0 ? (
+            <div className="text-center p-8 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              暂无上传文件。
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {fileList.map((f) => {
+                const isAudio = f.metadata?.mimetype?.startsWith('audio') || f.name.endsWith('.mp3') || f.name.endsWith('.wav');
+                const isCurrent = currentAudio === getFileUrl(f.name);
+                const isPlayingThis = isCurrent && isPlaying;
+                const displayName = getDisplayName(f.name);
+
+                return (
+                  <div key={f.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow ${isCurrent ? 'ring-1 ring-primary/30' : ''}`}>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3 overflow-hidden flex-1 mr-2">
+                        <button
+                          onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}
+                          className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-colors ${isAudio
+                            ? (isPlayingThis ? 'bg-primary text-white' : (isCurrent ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary hover:bg-primary/20'))
+                            : 'bg-blue-50 text-blue-500 hover:bg-blue-100'
+                            }`}
+                        >
+                          {isAudio ? (isPlayingThis ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />) : <FileText size={20} />}
+                        </button>
+
+                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => isAudio ? toggleAudio(f.name) : handlePreview(f.name)}>
+                          <p className={`text-sm font-medium truncate ${isCurrent ? 'text-primary' : 'text-gray-800'}`}>
+                            {displayName}
+                          </p>
+                          <p className="text-xs text-gray-400 flex items-center gap-2">
+                            {new Date(f.created_at).toLocaleDateString()} • {formatSize(f.metadata?.size)}
+                            {!isAudio && <span className="text-blue-400 flex items-center gap-0.5"><Eye size={10} /> 预览</span>}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button onClick={() => handleDelete(f.name)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18} /></button>
+                    </div>
+
+                    {/* 音频进度条 */}
+                    {isCurrent && (
+                      <div className="px-4 pb-4 -mt-1 animate-slide-up">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] text-gray-400 font-mono w-8 text-right">{formatTime(currentTime)}</span>
+                          <input
+                            type="range"
+                            min="0"
+                            max={duration || 100}
+                            value={currentTime}
+                            onChange={handleSeek}
+                            className="flex-1 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-sm"
+                          />
+                          <span className="text-[10px] text-gray-400 font-mono w-8">{formatTime(duration)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
       <audio
         ref={audioRef}
         onPlay={onAudioPlay}
@@ -485,7 +495,7 @@ const ResourceUploadView: React.FC = () => {
         onTimeUpdate={onAudioTimeUpdate}
         onLoadedMetadata={onAudioLoadedMetadata}
         onError={onAudioError}
-        playsInline // 对 iOS 友好
+        playsInline
       />
     </div>
   );

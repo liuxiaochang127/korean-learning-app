@@ -2,20 +2,51 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { api } from '../services/api';
 import { LogOut, Upload, Heart, User, ChevronRight } from 'lucide-react';
 
 const ProfileView: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState<any>(null);
 
   React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        api.getDictionaryStats(data.user.id).then(setStats);
+      }
+      setLoading(false);
+    });
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
   };
+
+  if (loading) return <div className="p-6 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+
+  if (!user) {
+    return (
+      <div className="p-6 h-full flex flex-col items-center justify-center space-y-6 text-center">
+        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+          <User className="text-gray-400" size={40} />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-gray-900">请先登录</h2>
+          <p className="text-gray-500 text-sm">登录后可以同步学习进度、收藏单词和上传资源。</p>
+        </div>
+        <button
+          onClick={() => navigate('/auth')}
+          className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition-colors"
+        >
+          立即登录 / 注册
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -25,8 +56,20 @@ const ProfileView: React.FC = () => {
           <User className="text-primary" size={24} />
         </div>
         <div>
-          <p className="font-bold text-gray-800">{user?.email || 'User'}</p>
-          <p className="text-xs text-gray-400">Student</p>
+          <p className="font-bold text-gray-800">{user.email}</p>
+          <p className="text-xs text-gray-400">上次登录: {new Date(user.last_sign_in_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      {/* 学习统计概览 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-blue-50 p-4 rounded-xl flex flex-col items-center justify-center space-y-1">
+          <span className="text-2xl font-bold text-blue-600">{stats?.learned || 0}</span>
+          <span className="text-xs text-blue-400 font-medium">已学单词</span>
+        </div>
+        <div className="bg-green-50 p-4 rounded-xl flex flex-col items-center justify-center space-y-1">
+          <span className="text-2xl font-bold text-green-600">1</span>
+          <span className="text-xs text-green-500 font-medium">连续打卡(天)</span>
         </div>
       </div>
 

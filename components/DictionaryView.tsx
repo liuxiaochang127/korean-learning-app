@@ -203,9 +203,9 @@ const DictionaryView: React.FC = () => {
    });
 
    return (
-      <div className="flex flex-col h-screen bg-background-light overflow-hidden">
+      <div className="flex flex-col h-full bg-background-light overflow-hidden">
          {/* 搜索头部 */}
-         <div className="shrink-0 z-30 bg-white shadow-sm pb-4 pt-4 px-4 rounded-b-3xl relative">
+         <div className="shrink-0 z-30 bg-white shadow-sm pb-4 pt-4 px-4 rounded-b-3xl sticky top-0">
             <div className="flex items-center justify-between mb-4 px-1">
                <h1 className="text-xl font-bold text-slate-900">韩语词典</h1>
                <button
@@ -253,7 +253,7 @@ const DictionaryView: React.FC = () => {
             </div>
          </div>
 
-         <main className="flex-1 px-4 pt-6 overflow-y-auto pb-24">
+         <main className="flex-1 px-4 pt-6 overflow-y-auto pb-24 no-scrollbar">
             <div className="flex flex-col gap-3 pb-8">
                {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-gray-300">
